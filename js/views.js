@@ -27,11 +27,16 @@
   };
   AON.icons = ICON;
 
-  function art(key, label) {
-    var cls = { perfume: 'fragrance', perfume2: 'fragrance', mist: 'fragrance', dropper: 'wellness', jar: 'wellness', tube: 'wellness',
-      necklace: 'jewellery', studs: 'jewellery', ring: 'jewellery', book: 'books', book2: 'books',
-      fragrance: 'fragrance', wellness: 'wellness', jewellery: 'jewellery', books: 'books' }[key] || 'wellness';
-    return '<div class="art art--' + cls + '" role="img" aria-label="' + esc(label) + '">' + AON.art[key] + '</div>';
+  function media(p, alt) {
+    if (p && p.image) {
+      return '<img class="product-photo" src="' + esc(p.image) + '" alt="' + esc(alt || '') + '">';
+    }
+    return '<img class="product-photo product-photo--mark" src="assets/logo.png" alt="' + esc(alt || S.name) + '">';
+  }
+
+  function categoryCover(c) {
+    var p = AON.products.find(function (x) { return x.category === c.id; });
+    return media(p, '');
   }
 
   function breadcrumb(items) {
@@ -45,7 +50,7 @@
     var cat = AON.findCategory(p.category);
     var hasVariants = p.variants && p.variants.length;
     return '<article class="product-card">' +
-      '<a class="product-card__media" href="#product-' + p.id + '" tabindex="-1" aria-hidden="true">' + art(p.shape, '') + '</a>' +
+      '<a class="product-card__media" href="#product-' + p.id + '" tabindex="-1" aria-hidden="true">' + media(p, '') + '</a>' +
       '<p class="product-card__cat">' + esc(cat.name) + '</p>' +
       '<h3 class="product-card__title"><a href="#product-' + p.id + '">' + esc(p.name) + '</a></h3>' +
       '<p class="product-card__meta">' + esc(p.size) + '</p>' +
@@ -117,53 +122,28 @@
      ====================================================================== */
   AON.views = {};
 
-  /* ---------- Home ---------- */
+  function openLine() {
+    var list = AON.maisons || [];
+    for (var i = 0; i < list.length; i++) if (list[i].open) return list[i];
+    return null;
+  }
+
+  /* ---------- Home — the house, then the open line's products ---------- */
   AON.views.home = function () {
-    var featured = AON.products.filter(function (p) { return p.featured; });
+    var line = openLine();
+    var list = AON.products.slice().sort(function (a, b) {
+      return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    });
     return {
-      title: 'Abundance of Nature · Beauty, wellness & everyday essentials',
+      title: (line ? line.name + ' · ' : '') + 'Abundance of Nature',
       nav: 'home',
       html:
-        '<section class="hero" aria-labelledby="hero-title">' +
-          '<div class="hero__copy">' +
-            '<p class="eyebrow">Live naturally · Live harmoniously · Live fully</p>' +
-            '<h1 class="hero__title" id="hero-title">Beauty, wellness &amp;<br><em>everyday essentials.</em></h1>' +
-            '<p class="lead">Fragrance, personal care, jewellery and books.</p>' +
-            '<div class="hero__actions"><a class="btn btn--primary btn--lg" href="#shop">Explore the shop</a>' +
-            '<a class="btn btn--ghost btn--lg" href="#help">Delivery &amp; returns</a></div>' +
-          '</div>' +
-          '<div class="hero__art" aria-hidden="true"><div class="arch"><img src="assets/logo.png" alt=""><p class="arch__tagline">' + esc(S.tagline) + '</p></div></div>' +
+        '<section class="house" aria-label="Abundance of Nature">' +
+          '<img class="house__mark" src="assets/logo.png" alt="Abundance of Nature" width="240" height="142">' +
         '</section>' +
-
-        '<nav class="category-strip" aria-label="Shop by category"><ul>' +
-          AON.categories.map(function (c) { return '<li><a href="#shop-' + c.id + '">' + esc(c.name) + '</a></li>'; }).join('') +
-        '</ul></nav>' +
-
-        '<section class="section"><div class="container">' +
-          '<div class="section__head"><div><p class="eyebrow">Shop by category</p><h2>Something for every day</h2></div>' +
-          '<a href="#shop">View all products</a></div>' +
-          '<div class="category-grid">' + AON.categories.map(function (c) {
-            return '<a class="category-card" href="#shop-' + c.id + '"><div class="category-card__art">' + art(c.art, '') + '</div>' +
-              '<div class="category-card__body"><h3>' + esc(c.name) + '</h3><p>' + esc(c.blurb) + '</p></div></a>';
-          }).join('') + '</div>' +
-        '</div></section>' +
-
-        '<section class="section section--tight" style="background:var(--white);border-block:1px solid var(--line)"><div class="container">' +
-          '<div class="section__head"><div><p class="eyebrow">Featured</p><h2>Customer favourites</h2></div><a href="#shop">Shop all</a></div>' +
-          '<div class="product-grid">' + featured.map(productCard).join('') + '</div>' +
-        '</div></section>' +
-
-        '<section class="values section" aria-label="Our values"><div class="container values__grid">' +
-          '<div><div class="values__mark">' + ICON.leaf + '</div><h3>Live naturally</h3><p>Products chosen for thoughtful ingredients and materials.</p></div>' +
-          '<div><div class="values__mark">' + ICON.sun + '</div><h3>Live harmoniously</h3><p>Small rituals that bring calm to the everyday.</p></div>' +
-          '<div><div class="values__mark">' + ICON.heart + '</div><h3>Live fully</h3><p>Pieces and pages to enjoy and keep.</p></div>' +
-        '</div></section>' +
-
-        '<section class="section section--tight"><div class="container info-strip">' +
-          '<div class="panel">' + '<h3>Clear prices</h3><p>Prices in euros with VAT included. Delivery charge and total shown before you pay.</p><a href="#terms-and-conditions">Terms and Conditions</a></div>' +
-          '<div class="panel"><h3>Delivery</h3><p>See delivery options and an estimate for your postcode at checkout.</p><a href="#delivery-and-shipping">Delivery and Shipping</a></div>' +
-          '<div class="panel"><h3>14-day withdrawal</h3><p>For eligible goods, tell us within 14 calendar days of delivery.</p><a href="#returns-and-refunds">Returns and Refunds</a></div>' +
-        '</div></section>'
+        '<section class="container home-edit" aria-label="' + esc(line ? line.name : 'Products') + '">' +
+          '<div class="product-grid">' + list.map(productCard).join('') + '</div>' +
+        '</section>'
     };
   };
 
@@ -185,14 +165,16 @@
     var opts = [['featured', 'Featured'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['name', 'Name A–Z']]
       .map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === sort ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
 
+    var line = openLine();
     return {
-      title: (cat ? cat.name : 'Shop') + ' · Abundance of Nature',
+      title: (cat ? cat.name + ' · ' : '') + (line ? line.name + ' · ' : '') + 'Abundance of Nature',
       nav: 'shop',
       html:
         '<header class="shop-head"><div class="container">' +
-          breadcrumb(cat ? [['Home', 'home'], ['Shop', 'shop'], [cat.name]] : [['Home', 'home'], ['Shop']]) +
-          '<h1>' + esc(cat ? cat.name : 'Shop') + '</h1>' +
-          '<p class="lead mb-0">' + esc(cat ? cat.blurb : 'Fragrance, personal care, jewellery and books.') + '</p>' +
+          breadcrumb(cat ? [['The house', 'home'], [line ? line.name : 'Line', 'shop'], [cat.name]] : [['The house', 'home'], [line ? line.name : 'Shop']]) +
+          '<p class="eyebrow">' + esc(line ? line.name : 'Line') + ' · a line of the house</p>' +
+          '<h1>' + esc(cat ? cat.name : (line ? line.name : 'Shop')) + '</h1>' +
+          '<p class="lead mb-0">' + esc(cat ? cat.blurb : (line ? line.blurb : 'The open line of the house.')) + '</p>' +
         '</div></header>' +
         '<div class="container section--tight" style="padding-block:var(--space-6) var(--space-8)">' +
           '<div class="shop-toolbar"><nav aria-label="Filter by category"><ul class="chips">' + chips + '</ul></nav>' +
@@ -213,18 +195,19 @@
     var variant = p.variants ? field({ id: 'variant', name: 'variant', label: 'Ring size', type: 'select',
       options: '<option value="">Choose a size</option>' + p.variants.map(function (v) { return '<option>' + v + '</option>'; }).join('') }) : '';
 
+    var line = openLine();
     return {
-      title: p.name + ' · Abundance of Nature',
+      title: p.name + ' · ' + (line ? line.name + ' · ' : '') + 'Abundance of Nature',
       nav: 'shop',
       html:
         '<div class="container" style="padding-top:var(--space-5)">' +
-          breadcrumb([['Home', 'home'], ['Shop', 'shop'], [cat.name, 'shop-' + cat.id], [p.name]]) +
+          breadcrumb([['The house', 'home'], [line ? line.name : 'Shop', 'shop'], [cat.name, 'shop-' + cat.id], [p.name]]) +
           '<div class="pdp">' +
-            '<div class="pdp__media">' + art(p.shape, p.name + ' — product image') + '</div>' +
+            '<div class="pdp__media">' + media(p, p.name) + '</div>' +
             '<div class="pdp__info">' +
-              '<p class="eyebrow">' + esc(cat.name) + '</p>' +
+              '<p class="eyebrow">' + esc((line ? line.name + ' · ' : '') + cat.name) + '</p>' +
               '<h1>' + esc(p.name) + '</h1>' +
-              '<p class="muted">' + esc(p.size) + '</p>' +
+              '<p class="muted">' + esc(p.size) + (p.sku ? ' · <span class="sku">' + esc(p.sku) + '</span>' : '') + '</p>' +
               '<p class="pdp__price">' + price(p.price) + '</p>' +
               '<p class="pdp__vat">VAT included · delivery charge shown at checkout</p>' +
               '<p>' + esc(p.description) + '</p>' +
@@ -239,7 +222,7 @@
               '<div class="accordion">' +
                 '<details><summary>Delivery</summary><div><p>Enter your postcode at checkout to see the delivery options, charge and estimated date before you pay.</p><a href="#delivery-and-shipping">Delivery and Shipping Policy</a></div></details>' +
                 '<details><summary>Returns</summary><div><p>For eligible goods, you normally have 14 calendar days from delivery to withdraw. Sealed goods that are unsuitable for return for health or hygiene reasons after unsealing may be excluded.</p><a href="#returns-and-refunds">Returns and Refunds Policy</a></div></details>' +
-                '<details><summary>Ingredients &amp; care</summary><div><p>Full ingredient list, care instructions and safety information appear here.</p></div></details>' +
+                '<details><summary>Materials &amp; care</summary><div><p>Keep the bag dry and reshape it gently by hand. Avoid prolonged sun and machine washing. Reference ' + esc(p.sku || p.id) + '.</p></div></details>' +
               '</div>' +
               '<div class="trust-row"><div>' + ICON.lock + 'Secure HTTPS payment</div><div>' + ICON.truck + 'Delivery estimate at checkout</div><div>' + ICON.return + '14-day withdrawal</div></div>' +
             '</div>' +
@@ -256,8 +239,9 @@
     var lines = AON.bag.lines();
     if (!lines.length) {
       return { title: 'Bag · Abundance of Nature', nav: 'bag', html:
-        '<div class="container"><div class="empty-state">' + ICON.bag.replace('class="icon"', 'class="icon"') +
-        '<h1 class="h2">Your bag is empty</h1><p class="muted">Explore fragrance, personal care, jewellery and books.</p>' +
+        '<div class="container"><div class="empty-state">' +
+        '<img class="empty-state__mark" src="assets/logo.png" alt="" width="140" height="83">' +
+        '<h1 class="h2">Your bag is empty</h1><p class="muted">Curly, shag, fringe and woven totes are waiting in the shop.</p>' +
         '<a class="btn btn--primary" href="#shop">Explore the shop</a></div></div>' };
     }
     var sub = AON.bag.subtotal();
@@ -270,7 +254,7 @@
         '<div class="bag-layout"><div><ul class="bag-list">' + lines.map(function (l) {
           var p = l.product;
           return '<li class="bag-item">' +
-            '<a class="bag-item__media" href="#product-' + p.id + '" aria-hidden="true" tabindex="-1">' + art(p.shape, '') + '</a>' +
+            '<a class="bag-item__media" href="#product-' + p.id + '" aria-hidden="true" tabindex="-1">' + media(p, '') + '</a>' +
             '<div><h2 class="bag-item__title"><a href="#product-' + p.id + '">' + esc(p.name) + '</a></h2>' +
               '<p class="bag-item__meta">' + esc(p.size) + (l.variant ? ' · Size ' + esc(l.variant) : '') + '</p>' +
               '<div class="bag-item__actions"><div class="qty" role="group" aria-label="Quantity for ' + esc(p.name) + '">' +
@@ -371,6 +355,7 @@
       nav: '',
       html:
         '<div class="container"><div class="confirm">' +
+          '<img class="confirm__logo" src="assets/logo.png" alt="Abundance of Nature" width="140" height="83">' +
           '<div class="confirm__mark">' + ICON.check + '</div>' +
           '<p class="eyebrow">Order ' + esc(o.number) + '</p>' +
           '<h1>Thank you, ' + esc(o.firstName) + '</h1>' +
